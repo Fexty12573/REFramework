@@ -6,6 +6,8 @@
 #include "utility/Scan.hpp"
 #include "utility/Patch.hpp"
 
+#include "StackDumper.h"
+
 #include "ExceptionHandler.hpp"
 
 LONG WINAPI reframework::global_exception_handler(struct _EXCEPTION_POINTERS* ei) {
@@ -74,6 +76,10 @@ LONG WINAPI reframework::global_exception_handler(struct _EXCEPTION_POINTERS* ei
     } else {
         spdlog::error("Module: Unknown");
     }
+
+    spdlog::error("Stacktrace:");
+    StackDumper sd{};
+    sd.ShowCallstack(GetCurrentThread(), ei->ContextRecord);
 
     auto dbghelp = LoadLibrary("dbghelp.dll");
 

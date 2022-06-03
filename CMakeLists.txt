@@ -743,6 +743,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx11.cpp"
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -822,6 +823,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 	)
 
 	target_link_directories(RE2 PUBLIC
@@ -1194,6 +1196,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx11.cpp"
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -1273,6 +1276,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 	)
 
 	target_link_directories(RE3 PUBLIC
@@ -1645,6 +1649,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx11.cpp"
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -1724,6 +1729,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 	)
 
 	target_link_directories(RE7 PUBLIC
@@ -2096,6 +2102,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx11.cpp"
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -2175,6 +2182,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 	)
 
 	target_link_directories(RE8 PUBLIC
@@ -2547,6 +2555,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx11.cpp"
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -2626,6 +2635,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 	)
 
 	target_link_directories(DMC5 PUBLIC
@@ -2998,6 +3008,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx11.cpp"
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -3077,6 +3088,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 	)
 
 	target_link_directories(MHRISE PUBLIC

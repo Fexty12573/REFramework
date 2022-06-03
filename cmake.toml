@@ -83,6 +83,13 @@ include-directories = [
 ]
 condition = "build-framework-dependencies"
 
+#[target.stackwalker]
+#type = "static"
+#sources = ["dependencies/stack/StackWalker.cpp"]
+#include_directories = [
+#    "dependencies/stack"
+#]
+#condition = "build-framework-dependencies"
 
 [target.imgui]
 type = "static"
@@ -151,9 +158,9 @@ private-link-libraries = [
 [template.game]
 condition = "build-framework"
 type = "shared"
-sources = ["src/**.cpp", "src/**.c"]
+sources = ["src/**.cpp", "src/**.c", "dependencies/stack/StackWalker.cpp"]
 headers = ["src/**.hpp", "src/**.h"]
-include-directories = ["shared/", "src/", "include/"]
+include-directories = ["shared/", "src/", "include/", "dependencies/stack/"]
 link-directories = ["dependencies/openvr/lib/win64/"]
 compile-options = ["/GS-", "/bigobj", "/EHa"]
 compile-features = ["cxx_std_20"]
@@ -173,7 +180,7 @@ link-libraries = [
     "glm_static",
     "shlwapi",
     "openvr",
-    "delayimp",
+    "delayimp"
 ]
 
 [template.game.properties]
