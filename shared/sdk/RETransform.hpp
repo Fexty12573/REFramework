@@ -260,6 +260,9 @@ namespace utility::re_transform {
     }
 
     glm::mat4 calculate_base_transform(const ::RETransform& transform, REJoint* target);
+    void calculate_base_transforms(const ::RETransform& transform, REJoint* target, std::unordered_map<REJoint*, glm::mat4>& out);
+    Vector4f calculate_tpose_pos_world(::RETransform& transform, REJoint* target, uint32_t depth=1);
+    void apply_joints_tpose(::RETransform& transform, const std::vector<REJoint*>& joints, uint32_t additional_parents = 0);
 }
 
 namespace sdk {
@@ -268,7 +271,9 @@ void set_transform_rotation(RETransform* transform, const glm::quat& rot);
 Vector4f get_transform_position(RETransform* transform);
 glm::quat get_transform_rotation(RETransform* transform);
 REJoint* get_transform_joint_by_hash(RETransform* transform, uint32_t hash);
+REJoint* get_transform_joint_by_name(RETransform* transform, std::wstring_view name);
 REJoint* get_joint_parent(REJoint* joint);
+uint32_t get_joint_hash(REJoint* joint);
 void set_joint_position(REJoint* joint, const Vector4f& position);
 void set_joint_rotation(REJoint* joint, const glm::quat& rotation);
 glm::quat get_joint_rotation(REJoint* joint);

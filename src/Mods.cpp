@@ -13,6 +13,7 @@
 #include "mods/Scene.hpp"
 #include "mods/ScriptRunner.hpp"
 #include "mods/VR.hpp"
+#include "mods/vr/games/RE8VR.hpp"
 
 #include "Mods.hpp"
 
@@ -28,15 +29,18 @@ Mods::Mods() {
 
     m_mods.emplace_back(VR::get());
 
-#ifndef RE8
+#if defined(RE8) || defined(RE7)
+    m_mods.emplace_back(RE8VR::get());
+#endif
 
+#ifndef RE8
 #if defined(RE2) || defined(RE3)
     m_mods.emplace_back(FirstPerson::get());
 #endif
-
-#else
-    m_mods.emplace_back(std::make_unique<Camera>());
 #endif
+
+    // All games!!!!
+    m_mods.emplace_back(std::make_unique<Camera>());
 
 #if defined(RE2) || defined(RE3) || defined(RE8)
     m_mods.emplace_back(std::make_unique<ManualFlashlight>());

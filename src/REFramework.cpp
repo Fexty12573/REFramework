@@ -925,7 +925,7 @@ void REFramework::draw_about() {
             std::string text;
         };
 
-        static std::array<License, 11> licenses{
+        static std::array<License, 12> licenses{
             License{ "glm", license::glm },
             License{ "imgui", license::imgui },
             License{ "minhook", license::minhook },
@@ -937,6 +937,7 @@ void REFramework::draw_about() {
             License{ "json", license::json },
             License{ "asmjit", license::asmjit },
             License{ "zydis", utility::narrow(license::zydis) },
+            License{ "openxr", license::openxr },
         };
 
         for (const auto& license : licenses) {
@@ -1250,8 +1251,9 @@ bool REFramework::init_d3d11() {
     D3D11_TEXTURE2D_DESC backbuffer_desc{};
 
     backbuffer->GetDesc(&backbuffer_desc);
-
     backbuffer_desc.BindFlags |= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    spdlog::info("[D3D11] Back buffer format is {}", backbuffer_desc.Format);
 
     // Create our blank render target.
     spdlog::info("[D3D11] Creating render targets...");
