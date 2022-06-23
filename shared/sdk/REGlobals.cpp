@@ -27,12 +27,19 @@ REGlobals::REGlobals() {
     auto start = (uintptr_t)mod;
     auto end = (uintptr_t)start + *utility::get_module_size(mod);
 
+    spdlog::info("REGlobals Scan: 0x{:X} - 0x{:X}", start, end);
+
     // generic pattern used for all these globals
     auto pat = std::string{ "48 8D ? ? ? ? ? 48 B8 00 00 00 00 00 00 00 80" };
 
     // find all the globals
     for (auto i = utility::scan(start, end - start, pat); i.has_value(); i = utility::scan(*i + 1, end - (*i + 1), pat)) {
         auto ptr = utility::calculate_absolute(*i + 3);
+
+        // Make sure the global is within the module
+        if (ptr < start || ptr > (end - 8)) {
+            continue;
+        }
 
         // Make sure the pointer is aligned on an 8-byte boundary.
         if (ptr == 0 || ((uintptr_t)ptr & (sizeof(void*) - 1)) != 0) {
@@ -49,6 +56,7 @@ REGlobals::REGlobals() {
             continue;
         }
         
+        spdlog::info("REGlobals Inserting Object: 0x{:X}", (uintptr_t)obj_ptr);
         m_objects.insert(obj_ptr);
         m_object_list.push_back(obj_ptr);
     }

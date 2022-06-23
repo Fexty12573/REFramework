@@ -3478,7 +3478,14 @@ void ObjectExplorer::populate_enums() {
 #ifndef RE7
 
     std::ofstream out_file("Enums_Internal.hpp");
+    std::ofstream out_file_cs("Enums_Internal.cs");
 
+    out_file_cs << R"(using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+)";
 
     auto ref = utility::scan(g_framework->get_module().as<HMODULE>(), "66 C7 40 18 01 01 48 89 05 ? ? ? ?");
     auto& l = *(std::map<uint64_t, REEnumData>*)(utility::calculate_absolute(*ref + 9));
@@ -3491,15 +3498,18 @@ void ObjectExplorer::populate_enums() {
 
         std::string name = elem.second.name;
         std::string nspace = name.substr(0, name.find_last_of("."));
+        std::string cpp_nspace = nspace;
         name = name.substr(name.find_last_of(".") + 1);
 
-        for (auto pos = nspace.find("."); pos != std::string::npos; pos = nspace.find(".")) {
-            nspace.replace(pos, 1, "::");
+        for (auto pos = cpp_nspace.find("."); pos != std::string::npos; pos = cpp_nspace.find(".")) {
+            cpp_nspace.replace(pos, 1, "::");
         }
 
-
-        out_file << "namespace " << nspace << " {" << std::endl;
+        out_file << "namespace " << cpp_nspace << " {" << std::endl;
         out_file << "    enum " << name << " {" << std::endl;
+
+        out_file_cs << "public namespace " << nspace << "\n{\n";
+        out_file_cs << "    public enum " << name << "\n    {\n";
 
         for (auto node = elem.second.values; node != nullptr; node = node->next) {
             if (node->name == nullptr) {
@@ -3508,13 +3518,18 @@ void ObjectExplorer::populate_enums() {
 
             spdlog::info("     {} = {}", node->name, node->value);
             out_file << "        " << node->name << " = " << node->value << "," << std::endl;
+            out_file_cs << "        " << node->name << " = " << node->value << "," << std::endl;
 
             m_enums.emplace(elem.second.name, EnumDescriptor{ node->name, node->value });
         }
 
         out_file << "    };" << std::endl;
         out_file << "}" << std::endl;
+
+        out_file_cs << "    }\n";
+        out_file_cs << "}\n";
     }
+
 #else
     std::vector<sdk::RETypeDefinition*> enum_types{};
     auto tdb = sdk::RETypeDB::get();

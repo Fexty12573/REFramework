@@ -1305,8 +1305,8 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
-		"${OPENXR_SOURCE_DIR}/src"
 		"dependencies/stack/"
+		"${OPENXR_SOURCE_DIR}/src"
 	)
 
 	target_link_directories(RE3 PUBLIC
