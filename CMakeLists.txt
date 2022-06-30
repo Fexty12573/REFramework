@@ -245,6 +245,46 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 	unset(CMKR_SOURCES)
 endif()
 
+# Target imguizmo
+if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
+	set(CMKR_TARGET imguizmo)
+	set(imguizmo_SOURCES "")
+
+	list(APPEND imguizmo_SOURCES
+		"dependencies/imguizmo/GraphEditor.cpp"
+		"dependencies/imguizmo/ImCurveEdit.cpp"
+		"dependencies/imguizmo/ImGradient.cpp"
+		"dependencies/imguizmo/ImGuizmo.cpp"
+		"dependencies/imguizmo/ImSequencer.cpp"
+	)
+
+	list(APPEND imguizmo_SOURCES
+		cmake.toml
+	)
+
+	set(CMKR_SOURCES ${imguizmo_SOURCES})
+	add_library(imguizmo STATIC)
+
+	if(imguizmo_SOURCES)
+		target_sources(imguizmo PRIVATE ${imguizmo_SOURCES})
+	endif()
+
+	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${imguizmo_SOURCES})
+
+	target_compile_definitions(imguizmo PUBLIC
+		"IMGUI_USER_CONFIG=\"${CMAKE_SOURCE_DIR}/src/re2-imgui/re2_imconfig.hpp\""
+	)
+
+	target_include_directories(imguizmo PUBLIC
+		"dependencies/imgui"
+		"dependencies/imguizmo"
+		"src/re2-imgui"
+	)
+
+	unset(CMKR_TARGET)
+	unset(CMKR_SOURCES)
+endif()
+
 # Target openvr
 if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 	set(CMKR_TARGET openvr)
@@ -440,6 +480,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 
 	list(APPEND RE2SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -459,6 +500,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -492,6 +534,17 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -526,6 +579,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -554,6 +608,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -847,6 +902,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 
 	list(APPEND RE2_TDB66SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -866,6 +922,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -899,6 +956,17 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -933,6 +1001,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -961,6 +1030,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -1399,6 +1469,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -1582,6 +1653,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -1621,6 +1693,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 
 	list(APPEND RE3SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -1640,6 +1713,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -1673,6 +1747,17 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -1707,6 +1792,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -1735,6 +1821,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -2028,6 +2115,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 
 	list(APPEND RE3_TDB67SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -2047,6 +2135,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -2080,6 +2169,17 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -2114,6 +2214,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -2142,6 +2243,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -2580,6 +2682,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -2763,6 +2866,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -2802,6 +2906,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 
 	list(APPEND RE7SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -2821,6 +2926,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -2854,6 +2960,17 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -2888,6 +3005,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -2916,6 +3034,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -3209,6 +3328,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 
 	list(APPEND RE7_TDB49SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -3228,6 +3348,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -3261,6 +3382,17 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -3295,6 +3427,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -3323,6 +3456,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -3761,6 +3895,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -3944,6 +4079,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -3983,6 +4119,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 
 	list(APPEND RE8SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -4002,6 +4139,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -4035,6 +4173,17 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -4069,6 +4218,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -4097,6 +4247,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -4534,6 +4685,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -4573,6 +4725,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 
 	list(APPEND DMC5SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -4592,6 +4745,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -4625,6 +4779,17 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -4659,6 +4824,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -4687,6 +4853,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -5124,6 +5291,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static
@@ -5163,6 +5331,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 
 	list(APPEND MHRISESDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
 		"shared/sdk/REContext.cpp"
@@ -5182,6 +5351,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
 		"shared/sdk/Math.hpp"
+		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
 		"shared/sdk/MurmurHash.hpp"
 		"shared/sdk/REArray.hpp"
@@ -5215,6 +5385,17 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
+		"shared/sdk/regenny/mhrise/via/OBB.hpp"
+		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/AxisDirection.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/Chain.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionArray.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisionData.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
+		"shared/sdk/regenny/mhrise/via/motion/SecondaryAnimation.hpp"
+		"shared/sdk/regenny/mhrise/via/vec3.hpp"
+		"shared/sdk/regenny/mhrise/via/vec4.hpp"
 		"shared/sdk/regenny/re2_tdb70/BullShit.hpp"
 		"shared/sdk/regenny/re2_tdb70/DeserializeSequence.hpp"
 		"shared/sdk/regenny/re2_tdb70/ManagedVtable.hpp"
@@ -5249,6 +5430,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 		"shared/sdk/regenny/re2_tdb70/via/JointData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointDesc.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/JointMap.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/ManagedObjectArray.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/MobileBarState.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/Motion.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/OBB.hpp"
@@ -5277,6 +5459,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNode.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeNodeData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObject.hpp"
+		"shared/sdk/regenny/re2_tdb70/via/behaviortree/TreeObjectData.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/clr/ManagedObject.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/fixed_array_jobs.hpp"
 		"shared/sdk/regenny/re2_tdb70/via/gui/Control.hpp"
@@ -5714,6 +5897,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		lua
 		sol2
 		imgui
+		imguizmo
 		minhook
 		d3d11
 		glm_static

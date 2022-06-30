@@ -1,6 +1,9 @@
 #include <optional>
 #include <tuple>
 
+#include <imgui.h>
+#include <ImGuizmo.h>
+
 #include "REFramework.hpp"
 #include "utility/ImGui.hpp"
 #include "sdk/SceneManager.hpp"
@@ -11,14 +14,21 @@
 #if TDB_VER < 69
 #include "sdk/regenny/re3/via/motion/Chain.hpp"
 #include "sdk/regenny/re3/via/motion/ChainCollisions.hpp"
-#elif TDB_VER == 69 || (TDB_VER == 70 && defined(MHRISE))
+#elif TDB_VER == 69
 #include "sdk/regenny/re8/via/motion/Chain.hpp"
 #include "sdk/regenny/re8/via/motion/ChainCollisionTop.hpp"
 #include "sdk/regenny/re8/via/motion/ChainCollisions.hpp"
+#elif TDB_VER == 70
+
+#if defined(MHRISE)
+#include "sdk/regenny/mhrise/via/motion/Chain.hpp"
+#include "sdk/regenny/mhrise/via/motion/ChainCollisions.hpp"
 #else
 #include "sdk/regenny/re2_tdb70/via/motion/Chain.hpp"
 #include "sdk/regenny/re2_tdb70/via/motion/ChainCollisionTop.hpp"
 #include "sdk/regenny/re2_tdb70/via/motion/ChainCollisions.hpp"
+#endif
+
 #endif
 
 #include "ObjectExplorer.hpp"
@@ -75,10 +85,16 @@ void ChainViewer::on_frame() {
         return;
     }
 
+    m_delta_time.update();
+
     static auto transform_def = utility::re_managed_object::get_type_definition(first_transform);
+    static auto folder_def = sdk::find_type_definition("via.Folder");
+    static auto gameobject_def = sdk::find_type_definition("via.GameObject");
     static auto next_transform_method = transform_def->get_method("get_Next");
     static auto child_transform_method = transform_def->get_method("get_Child");
     static auto get_gameobject_method = transform_def->get_method("get_GameObject");
+    static auto get_folder_path_method = folder_def->get_method("get_Path");
+    static auto get_folder_method = gameobject_def->get_method("get_Folder");
 
     auto camera = sdk::get_primary_camera();
 
@@ -110,7 +126,23 @@ void ChainViewer::on_frame() {
         return;
     }
 
-    const auto col = ImGui::GetColorU32(ImVec4(66.0f / 255.0f, 105.0f / 255.0f, 245.0f / 255.0f, 0.25f));
+    Matrix4x4f proj{}, view{};
+
+    const auto camera_origin = sdk::get_transform_position(camera_transform);
+
+    sdk::call_object_func<void*>(camera, "get_ProjectionMatrix", &proj, context, camera);
+    sdk::call_object_func<void*>(camera, "get_ViewMatrix", &view, context, camera);
+
+    /*view = view * Matrix4x4f {
+        -1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, -1, 0,
+        0, 0, 0, 1
+    };*/
+
+    IMGUIZMO_NAMESPACE::SetImGuiContext(ImGui::GetCurrentContext());
+    IMGUIZMO_NAMESPACE::SetDrawlist(ImGui::GetBackgroundDrawList());
+    IMGUIZMO_NAMESPACE::SetRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     ImGui::Begin("Chains");
 
@@ -119,18 +151,6 @@ void ChainViewer::on_frame() {
         transform = next_transform_method->call<RETransform*>(context, transform)) 
     {
         auto attempt_display_chains = [&](RETransform* transform) {
-            auto owner = get_gameobject_method->call<REGameObject*>(context, transform);
-
-            if (owner == nullptr) {
-                return;
-            }
-
-            auto owner_name = utility::re_string::get_string(owner->name);
-
-            if (owner_name.empty()) {
-                return;
-            }
-
             static auto chain_type = sdk::find_type_definition("via.motion.Chain");
             static auto chain_re_type = chain_type->get_type();
 
@@ -141,8 +161,41 @@ void ChainViewer::on_frame() {
                 return;
             }
 
+            auto owner = get_gameobject_method->call<REGameObject*>(context, transform);
+
+            if (owner == nullptr) {
+                return;
+            }
+
+            auto owner_name = utility::re_string::get_string(owner->name);
+
+            if (owner_name.empty()) {
+                owner_name = "";
+            }
+
             ImGui::PushID(chain);
             made = ImGui::TreeNode(chain, owner_name.data());
+
+            const auto is_hovering_node = ImGui::IsItemHovered();
+            auto col = ImVec4(66.0f / 255.0f, 105.0f / 255.0f, 245.0f / 255.0f, 0.25f);
+
+            // If we're hovering over the node, highlight it red and pulsate the alpha value
+            if (is_hovering_node) {
+                m_pulse_time += m_delta_time;
+
+                col.w = glm::abs(glm::cos(m_pulse_time * glm::pi<float>()));
+            }
+
+            const auto owner_folder = get_folder_method->call<::REManagedObject*>(context, owner);
+
+            if (owner_folder != nullptr) {
+                const auto folder_path = get_folder_path_method->call<::SystemString*>(context, owner_folder);
+
+                if (folder_path != nullptr) {       
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4{100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 255 / 255.0f}, " [%s]", utility::re_string::get_string(folder_path).data());
+                }
+            }
 
             if (made) {
                 ObjectExplorer::get()->handle_address(chain);
@@ -150,19 +203,104 @@ void ChainViewer::on_frame() {
 
             if (chain != nullptr && chain->CollisionData.num > 0 && chain->CollisionData.collisions != nullptr) {
                 for (auto i = 0; i < chain->CollisionData.num; ++i) {
-                    #if TDB_VER >= 69
+                    #if TDB_VER >= 69 && !defined(MHRISE)
                     const auto& collider_top = chain->CollisionData.collisions[i];
 
                     for (auto j = 0; j < collider_top.num_collisions; ++j) {
-                        const auto& collider = collider_top.collisions[j];
+                        auto& collider = collider_top.collisions[j];
                     #else
-                        const auto& collider = chain->CollisionData.collisions[i];
+                        auto& collider = chain->CollisionData.collisions[i];
                     #endif
+                        auto adjusted_pos1 = collider.pair_joint == nullptr ? *(Vector3f*)&collider.sphere.pos : *(Vector3f*)&collider.capsule.p0;
+                        auto adjusted_pos2 = collider.pair_joint == nullptr ? Vector3f{} : *(Vector3f*)&collider.capsule.p1;
+
+                        const auto joint_pos = collider.joint != nullptr ? (Vector3f)sdk::get_joint_position((::REJoint*)collider.joint) : Vector3f{};
+                        const auto joint_rot = collider.joint != nullptr ? sdk::get_joint_rotation((::REJoint*)collider.joint) : glm::identity<glm::quat>();
+                        const auto pair_joint_pos = collider.pair_joint != nullptr ? (Vector3f)sdk::get_joint_position((::REJoint*)collider.pair_joint) : Vector3f{};
+                        const auto predicted_pos = joint_pos + (joint_rot * *(Vector3f*)&collider.offset);
+                        const auto offset_length = glm::length(*(Vector3f*)&collider.offset);
+
+                        if (offset_length != 0.0f && collider.joint != nullptr && glm::length(predicted_pos - adjusted_pos1) >= (offset_length * 2.0f)) {
+                            if (collider.pair_joint != nullptr) {
+                                const auto rot = sdk::get_joint_rotation((::REJoint*)collider.joint);
+                                const auto rot2 = sdk::get_joint_rotation((::REJoint*)collider.pair_joint);
+                                adjusted_pos1 = (Vector3f)sdk::get_transform_position(sdk::get_joint_owner((::REJoint*)collider.joint)) + (*(Vector3f*)&collider.capsule.p0);
+                                adjusted_pos2 = (Vector3f)sdk::get_transform_position(sdk::get_joint_owner((::REJoint*)collider.pair_joint)) + (*(Vector3f*)&collider.capsule.p1);
+                            } else {
+                                adjusted_pos1 = (Vector3f)sdk::get_transform_position(sdk::get_joint_owner((::REJoint*)collider.joint)) + (*(Vector3f*)&collider.sphere.pos);
+                            }
+                        }
+
+                        if (!ImGui::GetIO().MouseDown[0]) {
+                            ImGuizmo::Enable(false);
+                            ImGuizmo::Enable(true);
+                        }
+
+                        const auto additional_rad = 2.0f;
+
+                        // Draw spheres/capsules and imguizmo widgets
                         if (collider.pair_joint == nullptr) {
-                            imgui::draw_sphere(*(Vector3f*)&collider.sphere.pos, collider.sphere.r, col, true);
+                            imgui::draw_sphere(adjusted_pos1, collider.sphere.r, ImGui::GetColorU32(col), true);
+
+                            Matrix4x4f mat = glm::scale(Vector3f{collider.sphere.r, collider.sphere.r, collider.sphere.r});
+                            mat[3] = Vector4f{adjusted_pos1, 1.0f};
+
+                            const auto screen_pos1 = sdk::renderer::world_to_screen(adjusted_pos1);
+                            const auto screen_pos1_top = sdk::renderer::world_to_screen(adjusted_pos1 + Vector3f{0.0f, collider.sphere.r, 0.0f});
+                            const auto cursor_pos = *(Vector2f*)&ImGui::GetIO().MousePos;
+                            const auto can_use1 = (screen_pos1 && screen_pos1_top && glm::length(cursor_pos - *screen_pos1) <= glm::abs(screen_pos1_top->y - screen_pos1->y) * additional_rad) || ImGuizmo::IsUsing();
+
+                            using OP = ImGuizmo::OPERATION;
+
+                            if (can_use1) {
+                                ImGuizmo::SetID((intptr_t)&collider.sphere);
+                                if (ImGuizmo::Manipulate((float*)&view, (float*)&proj, OP::TRANSLATE | OP::SCALEU, ImGuizmo::MODE::WORLD, (float*)&mat)) {
+                                    const auto delta = *(Vector3f*)&mat[3] - *(Vector3f*)&collider.sphere.pos;
+                                    *(Vector3f*)&collider.offset += glm::inverse(sdk::get_joint_rotation((::REJoint*)collider.joint)) * delta;
+                                    collider.radius = (glm::length(mat[0]) + glm::length(mat[1]) + glm::length(mat[2])) / 3.0f;
+                                }
+                            }
                         } else {
                             // Capsule
-                            imgui::draw_capsule(*(Vector3f*)&collider.capsule.p0, *(Vector3f*)&collider.capsule.p1, collider.capsule.r, col, true);
+                            imgui::draw_capsule(adjusted_pos1, adjusted_pos2, collider.capsule.r, ImGui::GetColorU32(col), true);
+
+                            const auto screen_pos1 = sdk::renderer::world_to_screen(adjusted_pos1);
+                            const auto screen_pos1_top = sdk::renderer::world_to_screen(adjusted_pos1 + Vector3f{0.0f, collider.capsule.r, 0.0f});
+                            const auto cursor_pos = *(Vector2f*)&ImGui::GetIO().MousePos;
+                            const auto can_use1 = (screen_pos1 && screen_pos1_top && glm::length(cursor_pos - *screen_pos1) <= glm::abs(screen_pos1_top->y - screen_pos1->y) * additional_rad) || ImGuizmo::IsUsing();
+
+                            Matrix4x4f mat = glm::scale(Vector3f{collider.capsule.r, collider.capsule.r, collider.capsule.r});
+                            using OP = ImGuizmo::OPERATION;
+
+                            if (can_use1) {
+                                mat[3] = Vector4f{adjusted_pos1, 1.0f};
+
+                                ImGui::PushID(&collider.capsule.p0);
+                                ImGuizmo::SetID((intptr_t)&collider.capsule.p0);
+                                if (ImGuizmo::Manipulate((float*)&view, (float*)&proj, OP::TRANSLATE | OP::SCALEU, ImGuizmo::MODE::WORLD, (float*)&mat)) {
+                                    const auto delta = *(Vector3f*)&mat[3] - *(Vector3f*)&collider.capsule.p0;
+                                    *(Vector3f*)&collider.offset += glm::inverse(sdk::get_joint_rotation((::REJoint*)collider.joint)) * delta;
+                                    collider.radius = (glm::length(mat[0]) + glm::length(mat[1]) + glm::length(mat[2])) / 3.0f;
+                                }
+                                ImGui::PopID();
+                            }
+
+                            const auto screen_pos2 = sdk::renderer::world_to_screen(adjusted_pos2);
+                            const auto screen_pos2_top = sdk::renderer::world_to_screen(adjusted_pos2 + Vector3f{0.0f, collider.capsule.r, 0.0f});
+                            const auto can_use2 = (screen_pos2 && screen_pos2_top && glm::length(cursor_pos - *screen_pos2) <= glm::abs(screen_pos2_top->y - screen_pos2->y) * additional_rad) || ImGuizmo::IsUsing();
+
+                            if (can_use2) {
+                                mat[3] = Vector4f{adjusted_pos2, 1.0f};
+
+                                ImGui::PushID(&collider.capsule.p1);
+                                ImGuizmo::SetID((intptr_t)&collider.capsule.p1);
+                                if (ImGuizmo::Manipulate((float*)&view, (float*)&proj, OP::TRANSLATE | OP::SCALEU, ImGuizmo::MODE::WORLD, (float*)&mat)) {
+                                    const auto delta = *(Vector3f*)&mat[3] - *(Vector3f*)&collider.capsule.p1;
+                                    *(Vector3f*)&collider.pair_offset += glm::inverse(sdk::get_joint_rotation((::REJoint*)collider.pair_joint)) * delta;
+                                    collider.radius = (glm::length(mat[0]) + glm::length(mat[1]) + glm::length(mat[2])) / 3.0f;
+                                }
+                                ImGui::PopID();
+                            }
                         }
 
                         //world_to_screen_methods[1]->call<void*>(&screen_pos, context, &pos, &view, &proj, &screen_size);
@@ -173,7 +311,7 @@ void ChainViewer::on_frame() {
                             
                             ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
 
-                        #if TDB_VER >= 69
+                        #if TDB_VER >= 69 && !defined(MHRISE)
                             if (ImGui::TreeNode(&collider, "Collision %d %d", i, j)) {
                         #else
                             if (ImGui::TreeNode(&collider, "Collision %d", i)) {
@@ -214,7 +352,7 @@ void ChainViewer::on_frame() {
 
                             ImGui::PopID();
                         }
-                #if TDB_VER >= 69
+                #if TDB_VER >= 69 && !defined(MHRISE)
                     }
                 #endif
                 }
