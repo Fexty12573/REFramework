@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <tuple>
+#include <optional>
 
 #include "ReClass.hpp"
 #include "RENativeArray.hpp"
@@ -68,7 +69,7 @@ public:
     uint32_t m_render_output_id;
     uint32_t m_render_output_id_2;
 
-#ifdef RE7
+#if TDB_VER <= 49
     sdk::renderer::RenderLayer* m_parent;
     sdk::NativeArray<sdk::renderer::RenderLayer*> m_layers;
     uint32_t m_priority;
@@ -90,7 +91,7 @@ public:
     uint32_t m_version;
 };
 
-#ifdef RE7
+#if TDB_VER <= 49
 static_assert(offsetof(RenderLayer, m_priority) == 0x48, "RenderLayer::m_priority offset is wrong");
 static_assert(offsetof(RenderLayer, m_layers) == 0x38, "RenderLayer::m_layers offset is wrong");
 static_assert(offsetof(RenderLayer, m_parent) == 0x30, "RenderLayer::m_parent offset is wrong");
@@ -138,5 +139,7 @@ RenderLayer* get_root_layer();
 RenderLayer* find_layer(::REType* layer_type);
 
 sdk::renderer::layer::Output* get_output_layer();
+
+std::optional<Vector2f> world_to_screen(const Vector3f& world_pos);
 }
 }

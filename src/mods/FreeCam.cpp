@@ -117,7 +117,12 @@ void FreeCam::on_update_transform(RETransform* transform) {
 
 
 #if defined(RE2) || defined(RE3)
-    const auto condition = m_survivor_manager->playerCondition;
+    static auto get_player_condition_method = sdk::find_method_definition(game_namespace("SurvivorManager"), "get_Player");
+    static auto get_action_orderer_method = sdk::find_method_definition(game_namespace("survivor.SurvivorCondition"), "get_ActionOrderer");
+
+    const auto condition = get_player_condition_method->call<RopewaySurvivorPlayerCondition*>(sdk::get_thread_context(), m_survivor_manager);
+    auto orderer = condition != nullptr ? get_action_orderer_method->call<RopewaySurvivorActionOrderer*>(sdk::get_thread_context(), condition) : nullptr;
+
 #endif
 
     // first joint
@@ -132,13 +137,21 @@ void FreeCam::on_update_transform(RETransform* transform) {
 #endif
 
 #if defined(RE2) || defined(RE3)
-        if (condition != nullptr && condition->actionOrderer != nullptr) {
-            condition->actionOrderer->enabled = true;
+        if (orderer != nullptr) {
+            orderer->enabled = true;
         }
 #endif
 
-        if (joint != nullptr && transform->joints.matrices != nullptr) {
+        /*if (joint != nullptr && transform->joints.matrices != nullptr) {
             m_last_camera_matrix = transform->joints.matrices->data[0].worldMatrix;
+        }
+        else {
+            m_last_camera_matrix = transform->worldTransform;
+        }*/
+
+        if (joint != nullptr) {
+            m_last_camera_matrix = Matrix4x4f{sdk::get_joint_rotation(joint)};
+            m_last_camera_matrix[3] = sdk::get_joint_position(joint);
         }
         else {
             m_last_camera_matrix = transform->worldTransform;
@@ -156,17 +169,14 @@ void FreeCam::on_update_transform(RETransform* transform) {
     }
 
 #if defined(RE2) || defined(RE3)
-    if (condition != nullptr) {
-        const auto orderer = condition->actionOrderer;
-        if (orderer != nullptr) {
-            orderer->enabled = !m_disable_movement->value();
-        }
+    if (orderer != nullptr) {
+        orderer->enabled = !m_disable_movement->value();
     }
 #endif
 
     // Update wanted camera position
     if (!m_lock_camera->value()) {
-#ifndef RE7
+#if TDB_VER > 49
         auto timescale = sdk::get_timescale();
 
         if (timescale == 0.0f) {
@@ -180,7 +190,7 @@ void FreeCam::on_update_transform(RETransform* transform) {
 #endif
 
         Vector4f dir{};
-#ifndef RE7
+#if TDB_VER > 49
         const auto delta = re_component::get_delta_time(transform);
 #else
         const auto delta = sdk::call_native_func_easy<float>(m_application.object, m_application.t, "get_DeltaTime");

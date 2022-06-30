@@ -236,6 +236,13 @@ struct REPropertyImpl {
 };
 #pragma pack(pop)
 
+struct ParamList {
+    uint16_t numParams; //0x0000
+	uint16_t invokeID; //0x0002
+	uint32_t returnType; //0x0004
+	uint32_t params[1]; //0x0008
+};
+
 struct REField {
     uint64_t declaring_typeid : TYPE_INDEX_BITS;
     uint64_t impl_id : 20;
@@ -523,10 +530,10 @@ struct TDB {
 #pragma pack(pop)
 }
 
-#if defined(RE8) || defined(MHRISE)
+#if TDB_VER >= 69
 #ifdef RE8
 struct RETypeDB_ : public sdk::tdb69::TDB {};
-#elif defined(MHRISE)
+#elif defined(MHRISE) || defined(RE2) || defined(RE3) || defined(RE7)
 struct RETypeDB_ : public sdk::tdb70::TDB {};
 #endif
 struct REMethodDefinition_ : public sdk::tdb69::REMethodDefinition {};
@@ -538,21 +545,22 @@ struct REPropertyImpl : public sdk::tdb69::REPropertyImpl {};
 struct REProperty : public sdk::tdb69::REProperty {};
 struct REParameterDef : public sdk::tdb69::REParameterDef {};
 using GenericListData = sdk::tdb69::GenericListData;
-#elif defined(RE3) || defined(DMC5)
+using ParamList = sdk::tdb69::ParamList;
+#elif TDB_VER == 67
 struct RETypeDB_ : public sdk::tdb67::TDB {};
 struct REMethodDefinition_ : public sdk::tdb67::REMethodDefinition {};
 using REField_ = sdk::tdb67::REField;
 struct REProperty : public sdk::tdb67::REProperty {};
 using GenericListData = sdk::tdb67::GenericListData;
 using REMethodParamDef = sdk::tdb67::REMethodParamDef;
-#elif RE2
+#elif TDB_VER == 66
 struct RETypeDB_ : public sdk::tdb66::TDB {};
 struct REMethodDefinition_ : public sdk::tdb66::REMethodDefinition {};
 using REField_ = sdk::tdb66::REField;
 struct REProperty : public sdk::tdb66::REProperty {};
 using GenericListData = sdk::tdb66::GenericListData;
 using REMethodParamDef = sdk::tdb66::REMethodParamDef;
-#elif RE7
+#elif TDB_VER == 49
 struct RETypeDB_ : public sdk::tdb49::TDB {};
 struct REMethodDefinition_ : public sdk::tdb49::REMethodDefinition {};
 using REField_ = sdk::tdb49::REField;
@@ -561,6 +569,8 @@ using REMethodParamDef = sdk::tdb49::REMethodParamDef;
 
 // FIX THIS!!!!
 using GenericListData = sdk::tdb66::GenericListData;
+#else
+static_assert(false, "TDB_VER is not defined");
 #endif
 } // namespace sdk
 

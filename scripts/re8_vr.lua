@@ -257,7 +257,7 @@ local function update_pad_device(device)
     local is_map_open = os.clock() - last_map_open_time < 0.25
 
     -- set cur_button | according to the right stick axis
-    if is_re8 then
+    if sdk.get_tdb_version() >= 69 then
         local is_book_open = os.clock() - last_book_open_time < 0.25
 
         if vr_right_stick_axis.x > 0.1 then

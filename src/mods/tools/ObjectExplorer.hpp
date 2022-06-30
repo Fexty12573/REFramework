@@ -12,24 +12,20 @@
 #include "Tool.hpp"
 #include "HookManager.hpp"
 
+#include <sdk/TDBVer.hpp>
+
 #ifdef DMC5
 #define TDB_DUMP_ALLOWED
-#define TDB_VER 67
 #elif defined(MHRISE)
 #define TDB_DUMP_ALLOWED
-#define TDB_VER 70
 #elif defined(RE8)
 #define TDB_DUMP_ALLOWED
-#define TDB_VER 69
 #elif RE3
 #define TDB_DUMP_ALLOWED
-#define TDB_VER 67
 #elif RE2
 #define TDB_DUMP_ALLOWED
-#define TDB_VER 66
 #elif RE7
 #define TDB_DUMP_ALLOWED
-#define TDB_VER 49
 #endif
 
 namespace sdk {
@@ -242,6 +238,7 @@ private:
     inline static const ImVec4 VARIABLE_COLOR{ 100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 255 / 255.0f };
     inline static const ImVec4 VARIABLE_COLOR_HIGHLIGHT{ 1.0f, 1.0f, 1.0f, 1.0f };
 
+    bool m_search_using_regex{false};
     std::string m_type_name{"via.typeinfo.TypeInfo"};
     std::string m_type_member{""};
     std::string m_object_address{ "0" };

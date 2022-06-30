@@ -9,6 +9,8 @@
 #include "sdk/RETypeDB.hpp"
 #include "sdk/SceneManager.hpp"
 #include "sdk/ResourceManager.hpp"
+#include "sdk/MotionFsm2Layer.hpp"
+#include "sdk/TDBVer.hpp"
 #include "utility/Memory.hpp"
 
 #include "../ScriptRunner.hpp"
@@ -188,7 +190,7 @@ int sol_lua_push(sol::types<T*>, lua_State* l, T* obj) {
             return 1;
         } else {
             if ((uintptr_t)obj != detail::FAKE_OBJECT_ADDR) {
-                api::re_managed_object::detail::add_ref(l, obj, false);
+                api::re_managed_object::detail::add_ref(l, (::REManagedObject*)obj, false);
             }
 
             auto backpedal = sol::stack::push<sol::detail::as_pointer_tag<std::remove_pointer_t<T>>>(l, obj);
@@ -224,6 +226,13 @@ struct ValueType {
     {
         if (type != nullptr) {
             data.resize(type->get_size());
+        }
+    }
+
+    ValueType(const void* raw_data, size_t raw_data_size) {
+        if (raw_data_size > 0 && raw_data != nullptr) {
+            data.resize(raw_data_size);
+            memcpy(data.data(), raw_data, raw_data_size);
         }
     }
 
@@ -297,6 +306,52 @@ struct ValueType {
 
         ::api::sdk::set_native_field(sol::make_object(l, (void*)address()), type, name, value);
     }
+};
+
+struct MemoryView {
+    uint8_t* data{nullptr};
+    size_t size{0};
+
+    MemoryView(uint8_t* d, size_t s)
+        : data(d)
+        , size(s)
+    {
+    }
+
+    template <typename T>
+    bool is_valid_offset(int32_t offset, T& value) const {
+        return offset >= 0 && offset + sizeof(T) <= (int32_t)size;
+    }
+
+    bool is_valid_offset(int32_t offset) const {
+        return offset >= 0 && offset <= (int32_t)size;
+    }
+
+    template <typename T>
+    void write_memory(int32_t offset, T value) {
+        if (!is_valid_offset(offset, value)) {
+            return;
+        }
+
+        *(T*)((uintptr_t)data + offset) = value;
+    }
+
+    template <typename T>
+    T read_memory(int32_t offset) {
+        if (!is_valid_offset(offset)) {
+            return {};
+        }
+
+        return *(T*)((uintptr_t)data + offset);
+    }
+
+    uintptr_t address() const {
+        return (uintptr_t)data;
+    }
+};
+
+struct BehaviorTreeCoreHandle : public ::REManagedObject {
+    int unused;
 };
 
 void* get_thread_context() {
@@ -648,6 +703,10 @@ sol::object parse_data(lua_State* l, void* data, ::sdk::RETypeDefinition* data_t
 
             return sol::make_object(l, obj);
         }
+        case "via.behaviortree.BehaviorTree.CoreHandle"_fnv:
+        case "via.motion.MotionFsm2Layer"_fnv:
+        case "via.timeline.TimelineFsm2Layer"_fnv:
+            return sol::make_object(l, *(api::sdk::BehaviorTreeCoreHandle**)data);
         default:
             if (vm_obj_type > via::clr::VMObjType::NULL_ && vm_obj_type < via::clr::VMObjType::ValType) {
                 switch (vm_obj_type) {
@@ -1008,6 +1067,7 @@ void bindings::open_sdk(ScriptState* s) {
     )");
 
     auto sdk = lua.create_table();
+    sdk["get_tdb_version"] = []() -> int { return TDB_VER; };
     sdk["game_namespace"] = game_namespace;
     sdk["get_thread_context"] = api::sdk::get_thread_context;
     sdk["get_native_singleton"] = api::sdk::get_native_singleton;
@@ -1350,6 +1410,23 @@ void bindings::open_sdk(ScriptState* s) {
         "get_type_definition", [](api::sdk::ValueType* b) { return b->type; }
     );
 
+    lua.new_usertype<api::sdk::MemoryView>("MemoryView",
+        "write_byte", &api::sdk::MemoryView::write_memory<uint8_t>,
+        "write_short", &api::sdk::MemoryView::write_memory<uint16_t>,
+        "write_dword", &api::sdk::MemoryView::write_memory<uint32_t>,
+        "write_qword", &api::sdk::MemoryView::write_memory<uint64_t>,
+        "write_float", &api::sdk::MemoryView::write_memory<float>,
+        "write_double", &api::sdk::MemoryView::write_memory<double>,
+        "read_byte", &api::sdk::MemoryView::read_memory<uint8_t>,
+        "read_short", &api::sdk::MemoryView::read_memory<uint16_t>,
+        "read_dword", &api::sdk::MemoryView::read_memory<uint32_t>,
+        "read_qword", &api::sdk::MemoryView::read_memory<uint64_t>,
+        "read_float", &api::sdk::MemoryView::read_memory<float>,
+        "read_double", &api::sdk::MemoryView::read_memory<double>,
+        "address", &api::sdk::MemoryView::address,
+        "get_address", &api::sdk::MemoryView::address
+    );
+
     lua.new_usertype<::sdk::Resource>("REResource",
         "add_ref", [](sol::this_state s, ::sdk::Resource* res) { 
             res->add_ref();
@@ -1361,4 +1438,49 @@ void bindings::open_sdk(ScriptState* s) {
         },
         "get_address", [](::sdk::Resource* res) { return (uintptr_t)res; }
     );
+
+    lua.new_usertype<::sdk::behaviortree::TreeNodeData>("BehaviorTreeNodeData",
+        "as_memoryview", [](::sdk::behaviortree::TreeNodeData* data) {
+            return api::sdk::MemoryView((uint8_t*)data, sizeof(::sdk::behaviortree::TreeNodeData));
+        }
+    );
+
+    lua.new_usertype<::sdk::behaviortree::TreeNode>("BehaviorTreeNode",
+        "as_memoryview", [](::sdk::behaviortree::TreeNode* node) {
+            return api::sdk::MemoryView((uint8_t*)node, sizeof(::sdk::behaviortree::TreeNode));
+        },
+        "get_id", &::sdk::behaviortree::TreeNode::get_id,
+        "get_data", &::sdk::behaviortree::TreeNode::get_data,
+        "get_owner", &::sdk::behaviortree::TreeNode::get_owner,
+        "get_parent", &::sdk::behaviortree::TreeNode::get_parent,
+        "get_name", &::sdk::behaviortree::TreeNode::get_name,
+        "get_full_name", &::sdk::behaviortree::TreeNode::get_full_name,
+        "get_children", &::sdk::behaviortree::TreeNode::get_children,
+        "get_actions", &::sdk::behaviortree::TreeNode::get_actions,
+        "get_transitions", &::sdk::behaviortree::TreeNode::get_transitions,
+        "get_status1", &::sdk::behaviortree::TreeNode::get_status1,
+        "get_status2", &::sdk::behaviortree::TreeNode::get_status2
+    );
+
+    lua.new_usertype<::sdk::behaviortree::TreeObject>("BehaviorTreeObject",
+        "as_memoryview", [](::sdk::behaviortree::TreeObject* obj) {
+            return api::sdk::MemoryView((uint8_t*)obj, sizeof(::sdk::behaviortree::TreeObject));
+        },
+        "get_node_by_id", &::sdk::behaviortree::TreeObject::get_node_by_id,
+        "get_node_by_name", [](::sdk::behaviortree::TreeObject* obj, const char* name) {
+            return obj->get_node_by_name(name);
+        },
+        "get_node", &::sdk::behaviortree::TreeObject::get_node,
+        "get_node_count", &::sdk::behaviortree::TreeObject::get_node_count,
+        "get_nodes", &::sdk::behaviortree::TreeObject::get_nodes
+    );
+
+    lua.new_usertype<api::sdk::BehaviorTreeCoreHandle>("BehaviorTreeCoreHandle",
+        sol::base_classes, sol::bases<::REManagedObject>(),
+        "get_tree_object", [](api::sdk::BehaviorTreeCoreHandle* handle) {
+            return ((sdk::behaviortree::CoreHandle*)handle)->get_tree_object();
+        }
+    );
+
+    create_managed_object_ptr_gc((api::sdk::BehaviorTreeCoreHandle*)nullptr);
 }

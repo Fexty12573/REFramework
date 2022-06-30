@@ -36,7 +36,7 @@ REGlobals::REGlobals() {
     for (auto i = utility::scan(start, end - start, pat); i.has_value(); i = utility::scan(*i + 1, end - (*i + 1), pat)) {
         auto ptr = utility::calculate_absolute(*i + 3);
 
-        // Make sure the global is within the module
+        // Make sure the global is within the module boundaries
         if (ptr < start || ptr > (end - 8)) {
             continue;
         }

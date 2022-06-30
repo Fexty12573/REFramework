@@ -2,6 +2,7 @@
 
 #include "mods/APIProxy.hpp"
 #include "mods/Camera.hpp"
+#include "mods/Graphics.hpp"
 #include "mods/DeveloperTools.hpp"
 #include "mods/FirstPerson.hpp"
 #include "mods/FreeCam.hpp"
@@ -41,6 +42,7 @@ Mods::Mods() {
 
     // All games!!!!
     m_mods.emplace_back(std::make_unique<Camera>());
+    m_mods.emplace_back(std::make_unique<Graphics>());
 
 #if defined(RE2) || defined(RE3) || defined(RE8)
     m_mods.emplace_back(std::make_unique<ManualFlashlight>());
@@ -48,7 +50,7 @@ Mods::Mods() {
 
     m_mods.emplace_back(std::make_unique<FreeCam>());
 
-#ifndef RE7
+#if TDB_VER > 49
     m_mods.emplace_back(std::make_unique<SceneMods>());
 #endif
 

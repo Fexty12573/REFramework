@@ -909,35 +909,34 @@ public:
 	uint8_t N000009D7; //0x0055
 	char pad_0056[2]; //0x0056
 	class DotNetGenericList *cameraControllerInfos; //0x0058
-	char pad_0060[8]; //0x0060
-	class RopewayCameraInterpolateSettings *cameraInterpSettings; //0x0068
-	float rayCastStartOffset; //0x0070
-	float maxViewShieldLength; //0x0074
-	class CollisionSystemAsyncCastRayHandle *castHandleTerrain; //0x0078
-	class CollisionSystemAsyncCastSphereHandle *castHandleCharacter; //0x0080
-	class CollisionSystemAsyncCastRayHandle *castHandleAim; //0x0088
-	class REGameObject *cameraGameObject; //0x0090
-	char pad_0098[8]; //0x0098
-	class RopewayPlayerCameraController *cameraController; //0x00A0
-	class RopewayPlayerCameraController *previousController; //0x00A8
-	class REManagedObject *N00006F3D; //0x00B0
-	class DampingFloat *damping; //0x00B8
-	class ValueTriggerBoolean *isExistStickInput; //0x00C0
-	class RECamera *mainCamera; //0x00C8
-	class DotNetGenericList *fixCameraIdentifiers; //0x00D0
-	class DotNetGenericList *cameraGateInfoContainers; //0x00D8
-	class RERenderCaptureToTexture *N00006F43; //0x00E0
-	class REJoint *playerJoint; //0x00E8
-	class RopewayMainCameraController *mainCameraController; //0x00F0
-	bool isUseWideMonitor; //0x00F8
-	char pad_00F9[7]; //0x00F9
-	class REManagedObject *N00003EEC; //0x0100
-	bool N00003EED; //0x0108
-	char pad_0109[71]; //0x0109
-	class DotNetGenericList *stringList; //0x0150
-	char pad_0158[8]; //0x0158
-}; //Size: 0x0160
-static_assert(sizeof(RopewayCameraSystem) == 0x160);
+	class RopewayCameraInterpolateSettings *cameraInterpSettings; //0x0060
+	float rayCastStartOffset; //0x0068
+	float maxViewShieldLength; //0x006C
+	class CollisionSystemAsyncCastRayHandle *castHandleTerrain; //0x0070
+	class CollisionSystemAsyncCastSphereHandle *castHandleCharacter; //0x0078
+	class CollisionSystemAsyncCastRayHandle *castHandleAim; //0x0080
+	class REGameObject *cameraGameObject; //0x0088
+	char pad_0090[8]; //0x0090
+	class RopewayPlayerCameraController *cameraController; //0x0098
+	class RopewayPlayerCameraController *previousController; //0x00A0
+	class REManagedObject *N00006F3D; //0x00A8
+	class DampingFloat *damping; //0x00B0
+	class ValueTriggerBoolean *isExistStickInput; //0x00B8
+	class RECamera *mainCamera; //0x00C0
+	class DotNetGenericList *fixCameraIdentifiers; //0x00C8
+	class DotNetGenericList *cameraGateInfoContainers; //0x00D0
+	class RERenderCaptureToTexture *N00006F43; //0x00D8
+	class REJoint *playerJoint; //0x00E0
+	class RopewayMainCameraController *mainCameraController; //0x00E8
+	bool isUseWideMonitor; //0x00F0
+	char pad_00F1[7]; //0x00F1
+	class REManagedObject *N00003EEC; //0x00F8
+	bool N00003EED; //0x0100
+	char pad_0101[71]; //0x0101
+	class DotNetGenericList *stringList; //0x0148
+	char pad_0150[8]; //0x0150
+}; //Size: 0x0158
+static_assert(sizeof(RopewayCameraSystem) == 0x158);
 
 class N000070F5
 {
@@ -1224,24 +1223,23 @@ public:
 	Vector4f cameraObjectPosition; //0x0060
 	Vector4f cameraObjectRotation; //0x0070
 	Vector4f cameraPosition; //0x0080
-	Vector4f cameraDampingCameraPosition; //0x0090
-	Vector4f cameraRotation; //0x00A0
-	char pad_00B0[4]; //0x00B0
-	float fov; //0x00B4
-	bool controllerEnabled; //0x00B8
-	char pad_00B9[3]; //0x00B9
-	float switchBusyTime; //0x00BC
-	float switchInterpolationTime; //0x00C0
-	char pad_00C4[4]; //0x00C4
-	class REAnimationCurve *N00000817; //0x00C8
-	class DotNetGenericList *cameraShakes; //0x00D0
-	class REGameObject *mainCameraObject; //0x00D8
-	class RECamera *mainCamera; //0x00E0
-	class REJoint *N0000081B; //0x00E8
-	class AppliedCameraShakeParam *appliedCameraShakeParam; //0x00F0
-	char pad_00F8[88]; //0x00F8
-}; //Size: 0x0150
-static_assert(sizeof(RopewayMainCameraController) == 0x150);
+	Vector4f cameraRotation; //0x0090
+	char pad_00A0[4]; //0x00A0
+	float fov; //0x00A4
+	bool controllerEnabled; //0x00A8
+	char pad_00A9[3]; //0x00A9
+	float switchBusyTime; //0x00AC
+	float switchInterpolationTime; //0x00B0
+	char pad_00B4[4]; //0x00B4
+	class REAnimationCurve *N00000817; //0x00B8
+	class DotNetGenericList *cameraShakes; //0x00C0
+	class REGameObject *mainCameraObject; //0x00C8
+	class RECamera *mainCamera; //0x00D0
+	class REJoint *N0000081B; //0x00D8
+	class AppliedCameraShakeParam *appliedCameraShakeParam; //0x00E0
+	char pad_00E8[88]; //0x00E8
+}; //Size: 0x0140
+static_assert(sizeof(RopewayMainCameraController) == 0x140);
 
 class N00000878
 {
