@@ -13,6 +13,7 @@
 #include "mods/REFrameworkConfig.hpp"
 #include "mods/Scene.hpp"
 #include "mods/ScriptRunner.hpp"
+#include "mods/ScriptConsole.hpp"
 #include "mods/VR.hpp"
 #include "mods/vr/games/RE8VR.hpp"
 
@@ -68,6 +69,7 @@ Mods::Mods() {
     m_mods.emplace_back(APIProxy::get());
     m_mods.emplace_back(PluginLoader::get());
     m_mods.emplace_back(ScriptRunner::get());
+    m_mods.emplace_back(ScriptConsole::get());
 }
 
 std::optional<std::string> Mods::on_initialize() const {

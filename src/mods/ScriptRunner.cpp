@@ -22,6 +22,8 @@
 
 #include "ScriptRunner.hpp"
 
+#include "WindowsConsoleHook.hpp"
+
 #include <lstate.h> // weird include order because of sol
 #include <lgc.h>
 
@@ -686,7 +688,7 @@ void ScriptRunner::on_frame() {
 
 void ScriptRunner::on_draw_ui() {
     ImGui::SetNextTreeNodeOpen(false, ImGuiCond_::ImGuiCond_Once);
-
+    
     if (ImGui::CollapsingHeader(get_name().data())) {
         if (ImGui::Button("Run script")) {
             OPENFILENAME ofn{};
@@ -720,6 +722,8 @@ void ScriptRunner::on_draw_ui() {
                 freopen("CONIN$", "r", stdin);
                 freopen("CONOUT$", "w", stdout);
                 freopen("CONOUT$", "w", stderr);
+
+                WindowsConsoleHook::get()->install();
 
                 m_console_spawned = true;
             }

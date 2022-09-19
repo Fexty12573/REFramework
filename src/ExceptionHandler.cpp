@@ -1,12 +1,14 @@
 #include <windows.h>
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
+#include <StackDumper.h>
 
 #include "utility/Module.hpp"
 #include "utility/Scan.hpp"
 #include "utility/Patch.hpp"
 
 #include "ExceptionHandler.hpp"
+
 
 LONG WINAPI reframework::global_exception_handler(struct _EXCEPTION_POINTERS* ei) {
     spdlog::flush_on(spdlog::level::err);
@@ -74,6 +76,10 @@ LONG WINAPI reframework::global_exception_handler(struct _EXCEPTION_POINTERS* ei
     } else {
         spdlog::error("Module: Unknown");
     }
+
+    spdlog::error("Stack trace:");
+    StackDumper sd{};
+    sd.ShowCallstack(GetCurrentThread(), ei->ContextRecord);
 
     auto dbghelp = LoadLibrary("dbghelp.dll");
 

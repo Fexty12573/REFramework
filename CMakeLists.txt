@@ -473,6 +473,38 @@ target_link_libraries(utility PUBLIC
 unset(CMKR_TARGET)
 unset(CMKR_SOURCES)
 
+# Target linenoise_ng
+if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
+	set(CMKR_TARGET linenoise_ng)
+	set(linenoise_ng_SOURCES "")
+
+	list(APPEND linenoise_ng_SOURCES
+		"dependencies/linenoise-ng/src/ConvertUTF.cpp"
+		"dependencies/linenoise-ng/src/linenoise.cpp"
+		"dependencies/linenoise-ng/src/wcwidth.cpp"
+	)
+
+	list(APPEND linenoise_ng_SOURCES
+		cmake.toml
+	)
+
+	set(CMKR_SOURCES ${linenoise_ng_SOURCES})
+	add_library(linenoise_ng STATIC)
+
+	if(linenoise_ng_SOURCES)
+		target_sources(linenoise_ng PRIVATE ${linenoise_ng_SOURCES})
+	endif()
+
+	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${linenoise_ng_SOURCES})
+
+	target_include_directories(linenoise_ng PUBLIC
+		"dependencies/linenoise-ng/include"
+	)
+
+	unset(CMKR_TARGET)
+	unset(CMKR_SOURCES)
+endif()
+
 # Target RE2SDK
 if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 	set(CMKR_TARGET RE2SDK)
@@ -1364,6 +1396,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -1377,6 +1410,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -1397,6 +1431,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -1409,6 +1444,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -1422,6 +1458,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -1483,6 +1520,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -1507,6 +1545,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE2 PROPERTIES
@@ -1546,6 +1585,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -1559,6 +1599,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -1579,6 +1620,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -1591,6 +1633,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -1604,6 +1647,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -1665,6 +1709,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -1689,6 +1734,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE2_TDB66 PROPERTIES
@@ -2605,6 +2651,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -2618,6 +2665,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -2638,6 +2686,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -2650,6 +2699,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -2663,6 +2713,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -2724,6 +2775,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -2748,6 +2800,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE3 PROPERTIES
@@ -2787,6 +2840,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -2800,6 +2854,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -2820,6 +2875,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -2832,6 +2888,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -2845,6 +2902,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -2906,6 +2964,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -2930,6 +2989,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE3_TDB67 PROPERTIES
@@ -3846,6 +3906,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -3859,6 +3920,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -3879,6 +3941,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -3891,6 +3954,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -3904,6 +3968,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -3965,6 +4030,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -3989,6 +4055,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE7 PROPERTIES
@@ -4028,6 +4095,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -4041,6 +4109,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -4061,6 +4130,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -4073,6 +4143,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -4086,6 +4157,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -4147,6 +4219,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -4171,6 +4244,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE7_TDB49 PROPERTIES
@@ -4648,6 +4722,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -4661,6 +4736,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -4681,6 +4757,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -4693,6 +4770,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -4706,6 +4784,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -4767,6 +4846,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -4791,6 +4871,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(RE8 PROPERTIES
@@ -5268,6 +5349,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -5281,6 +5363,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -5301,6 +5384,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -5313,6 +5397,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -5326,6 +5411,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -5387,6 +5473,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -5411,6 +5498,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(DMC5 PROPERTIES
@@ -5888,6 +5976,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Main.cpp"
 		"src/Mods.cpp"
 		"src/REFramework.cpp"
+		"src/WindowsConsoleHook.cpp"
 		"src/WindowsMessageHook.cpp"
 		"src/mods/APIProxy.cpp"
 		"src/mods/Camera.cpp"
@@ -5901,6 +5990,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.cpp"
 		"src/mods/REFrameworkConfig.cpp"
 		"src/mods/Scene.cpp"
+		"src/mods/ScriptConsole.cpp"
 		"src/mods/ScriptRunner.cpp"
 		"src/mods/VR.cpp"
 		"src/mods/bindings/FS.cpp"
@@ -5921,6 +6011,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/re2-imgui/imgui_impl_dx12.cpp"
 		"src/re2-imgui/imgui_impl_win32.cpp"
 		"src/utility/ImGui.cpp"
+		"dependencies/stack/StackWalker.cpp"
 		"src/D3D11Hook.hpp"
 		"src/D3D12Hook.hpp"
 		"src/DInputHook.hpp"
@@ -5933,6 +6024,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/Mods.hpp"
 		"src/REFramework.hpp"
 		"src/Tool.hpp"
+		"src/WindowsConsoleHook.hpp"
 		"src/WindowsMessageHook.hpp"
 		"src/mods/APIProxy.hpp"
 		"src/mods/Camera.hpp"
@@ -5946,6 +6038,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"src/mods/PluginLoader.hpp"
 		"src/mods/REFrameworkConfig.hpp"
 		"src/mods/Scene.hpp"
+		"src/mods/ScriptConsole.hpp"
 		"src/mods/ScriptRunner.hpp"
 		"src/mods/VR.hpp"
 		"src/mods/bindings/FS.hpp"
@@ -6007,6 +6100,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		"shared/"
 		"src/"
 		"include/"
+		"dependencies/stack/"
 		"${OPENXR_SOURCE_DIR}/src"
 	)
 
@@ -6031,6 +6125,7 @@ if(REF_BUILD_FRAMEWORK AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework
 		openvr
 		openxr_loader
 		delayimp
+		linenoise_ng
 	)
 
 	set_target_properties(MHRISE PROPERTIES
