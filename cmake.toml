@@ -152,6 +152,12 @@ link-libraries = [
     "minhook"
 ]
 
+[target.linenoise_ng]
+type = "static"
+sources = ["dependencies/linenoise-ng/src/**.c", "dependencies/linenoise-ng/src/**.cpp"]
+include-directories = ["dependencies/linenoise-ng/include"]
+condition = "build-framework"
+
 [template.sdk]
 type = "static"
 sources = ["shared/sdk/**.cpp", "shared/sdk/**.c"]
@@ -171,9 +177,9 @@ private-link-libraries = [
 [template.game]
 condition = "build-framework"
 type = "shared"
-sources = ["src/**.cpp", "src/**.c"]
+sources = ["src/**.cpp", "src/**.c", "dependencies/stack/StackWalker.cpp"]
 headers = ["src/**.hpp", "src/**.h"]
-include-directories = ["shared/", "src/", "include/", "${OPENXR_SOURCE_DIR}/src"]
+include-directories = ["shared/", "src/", "include/", "dependencies/stack/", "${OPENXR_SOURCE_DIR}/src"]
 link-directories = ["dependencies/openvr/lib/win64/"]
 compile-options = ["/GS-", "/bigobj", "/EHa"]
 compile-features = ["cxx_std_20"]
@@ -196,6 +202,7 @@ link-libraries = [
     "openvr",
     "openxr_loader",
     "delayimp",
+	"linenoise_ng",
 ]
 
 [template.game.properties]
