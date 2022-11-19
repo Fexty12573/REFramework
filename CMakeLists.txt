@@ -50,8 +50,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 # string(REGEX REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 set(ASMJIT_STATIC ON CACHE BOOL "" FORCE)
-set(ZYDIS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(ZYDIS_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(DYNAMIC_LOADER ON CACHE BOOL "" FORCE) # OpenXR
 
 
@@ -81,16 +79,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(asmjit)
 
-message(STATUS "Fetching zydis (3f5a3ad8e16658c62d7033e9373232d19480d3cc)...")
-FetchContent_Declare(
-	zydis
-	GIT_REPOSITORY
-		https://github.com/zyantific/zydis
-	GIT_TAG
-		3f5a3ad8e16658c62d7033e9373232d19480d3cc
-)
-FetchContent_MakeAvailable(zydis)
-
 message(STATUS "Fetching openxr (458984d7f59d1ae6dc1b597d94b02e4f7132eaba)...")
 FetchContent_Declare(
 	openxr
@@ -101,6 +89,25 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(openxr)
 
+message(STATUS "Fetching bddisasm (v1.34.10)...")
+FetchContent_Declare(
+	bddisasm
+	GIT_REPOSITORY
+		https://github.com/bitdefender/bddisasm
+	GIT_TAG
+		v1.34.10
+)
+FetchContent_MakeAvailable(bddisasm)
+
+message(STATUS "Fetching kananlib (main)...")
+FetchContent_Declare(
+	kananlib
+	GIT_REPOSITORY
+		https://github.com/cursey/kananlib
+	GIT_TAG
+		main
+)
+FetchContent_MakeAvailable(kananlib)
 # Target spdlog
 if(REF_BUILD_DEPENDENCIES AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework-dependencies
 	set(CMKR_TARGET spdlog)
@@ -129,6 +136,7 @@ if(REF_BUILD_DEPENDENCIES AND CMAKE_SIZEOF_VOID_P EQUAL 8) # build-framework-dep
 
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${spdlog_SOURCES})
 
+	add_library(spdlog::spdlog ALIAS spdlog)
 	target_compile_definitions(spdlog PUBLIC
 		SPDLOG_COMPILED_LIB
 	)
@@ -418,30 +426,8 @@ set(CMKR_TARGET utility)
 set(utility_SOURCES "")
 
 list(APPEND utility_SOURCES
-	"shared/utility/Address.cpp"
-	"shared/utility/Config.cpp"
 	"shared/utility/FunctionHook.cpp"
-	"shared/utility/Memory.cpp"
-	"shared/utility/Module.cpp"
-	"shared/utility/Patch.cpp"
-	"shared/utility/Pattern.cpp"
-	"shared/utility/PointerHook.cpp"
-	"shared/utility/Registry.cpp"
-	"shared/utility/Scan.cpp"
-	"shared/utility/String.cpp"
-	"shared/utility/Thread.cpp"
-	"shared/utility/Address.hpp"
-	"shared/utility/Config.hpp"
 	"shared/utility/FunctionHook.hpp"
-	"shared/utility/Memory.hpp"
-	"shared/utility/Module.hpp"
-	"shared/utility/Patch.hpp"
-	"shared/utility/Pattern.hpp"
-	"shared/utility/PointerHook.hpp"
-	"shared/utility/Registry.hpp"
-	"shared/utility/Scan.hpp"
-	"shared/utility/String.hpp"
-	"shared/utility/Thread.hpp"
 )
 
 list(APPEND utility_SOURCES
@@ -468,6 +454,7 @@ target_compile_options(utility PUBLIC
 target_link_libraries(utility PUBLIC
 	spdlog
 	minhook
+	kananlib
 )
 
 unset(CMKR_TARGET)
@@ -512,6 +499,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 
 	list(APPEND RE2SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -532,6 +520,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -567,6 +556,7 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -928,7 +918,6 @@ if(REF_BUILD_RE2_SDK OR REF_BUILD_FRAMEWORK) # build-re2-sdk
 	target_link_libraries(RE2SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE2SDK PRIVATE
@@ -950,6 +939,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 
 	list(APPEND RE2_TDB66SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -970,6 +960,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -1005,6 +996,7 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -1366,7 +1358,6 @@ if(REF_BUILD_RE2_TDB66SDK OR REF_BUILD_FRAMEWORK) # build-re2tdb66-sdk
 	target_link_libraries(RE2_TDB66SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE2_TDB66SDK PRIVATE
@@ -1767,6 +1758,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 
 	list(APPEND RE3SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -1787,6 +1779,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -1822,6 +1815,7 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -2183,7 +2177,6 @@ if(REF_BUILD_RE3_SDK OR REF_BUILD_FRAMEWORK) # build-re3-sdk
 	target_link_libraries(RE3SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE3SDK PRIVATE
@@ -2205,6 +2198,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 
 	list(APPEND RE3_TDB67SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -2225,6 +2219,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -2260,6 +2255,7 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -2621,7 +2617,6 @@ if(REF_BUILD_RE3_TDB67SDK OR REF_BUILD_FRAMEWORK) # build-re3tdb67-sdk
 	target_link_libraries(RE3_TDB67SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE3_TDB67SDK PRIVATE
@@ -3022,6 +3017,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 
 	list(APPEND RE7SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -3042,6 +3038,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -3077,6 +3074,7 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -3438,7 +3436,6 @@ if(REF_BUILD_RE7_SDK OR REF_BUILD_FRAMEWORK) # build-re7-sdk
 	target_link_libraries(RE7SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE7SDK PRIVATE
@@ -3460,6 +3457,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 
 	list(APPEND RE7_TDB49SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -3480,6 +3478,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -3515,6 +3514,7 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -3876,7 +3876,6 @@ if(REF_BUILD_RE7_TDB49SDK OR REF_BUILD_FRAMEWORK) # build-re7tdb49-sdk
 	target_link_libraries(RE7_TDB49SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE7_TDB49SDK PRIVATE
@@ -4277,6 +4276,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 
 	list(APPEND RE8SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -4297,6 +4297,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -4332,6 +4333,7 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -4693,7 +4695,6 @@ if(REF_BUILD_RE8_SDK OR REF_BUILD_FRAMEWORK) # build-re8-sdk
 	target_link_libraries(RE8SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(RE8SDK PRIVATE
@@ -4904,6 +4905,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 
 	list(APPEND DMC5SDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -4924,6 +4926,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -4959,6 +4962,7 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -5320,7 +5324,6 @@ if(REF_BUILD_DMC5_SDK OR REF_BUILD_FRAMEWORK) # build-dmc5-sdk
 	target_link_libraries(DMC5SDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(DMC5SDK PRIVATE
@@ -5531,6 +5534,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 
 	list(APPEND MHRISESDK_SOURCES
 		"shared/sdk/Application.cpp"
+		"shared/sdk/ManagedObject.cpp"
 		"shared/sdk/Memory.cpp"
 		"shared/sdk/MotionFsm2Layer.cpp"
 		"shared/sdk/MurmurHash.cpp"
@@ -5551,6 +5555,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 		"shared/sdk/helpers/NativeObject.cpp"
 		"shared/sdk/Application.hpp"
 		"shared/sdk/Enums_Internal.hpp"
+		"shared/sdk/ManagedObject.hpp"
 		"shared/sdk/Math.hpp"
 		"shared/sdk/Memory.hpp"
 		"shared/sdk/MotionFsm2Layer.hpp"
@@ -5586,6 +5591,7 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 		"shared/sdk/SystemArray.hpp"
 		"shared/sdk/TDBVer.hpp"
 		"shared/sdk/helpers/NativeObject.hpp"
+		"shared/sdk/intrusive_ptr.hpp"
 		"shared/sdk/regenny/mhrise/via/Capsule.hpp"
 		"shared/sdk/regenny/mhrise/via/OBB.hpp"
 		"shared/sdk/regenny/mhrise/via/Sphere.hpp"
@@ -5947,7 +5953,6 @@ if(REF_BUILD_MHRISE_SDK OR REF_BUILD_FRAMEWORK) # build-mhrise-sdk
 	target_link_libraries(MHRISESDK PUBLIC
 		glm_static
 		spdlog
-		Zydis
 	)
 
 	target_link_libraries(MHRISESDK PRIVATE
