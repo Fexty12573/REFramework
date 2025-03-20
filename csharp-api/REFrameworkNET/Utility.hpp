@@ -22,8 +22,8 @@ namespace REFrameworkNET {
         return hash(s);
     }
 
-    ref class Utility {
-    public:
+    public ref class Utility {
+    internal:
         // field can be null, just used for more information (particularly for static strings that can be literal)
         static System::Object^ BoxData(uintptr_t* ptr, TypeDefinition^ t, bool fromInvoke) {
             return BoxData(ptr, t, fromInvoke, nullptr);
@@ -31,5 +31,8 @@ namespace REFrameworkNET {
         
         static System::Object^ BoxData(uintptr_t* ptr, TypeDefinition^ t, bool fromInvoke, Field^ field);
         static System::Object^ TranslateBoxedData(System::Type^ targetReturnType, System::Object^ boxedData);
+
+    public:
+        static System::Object^ ConvertReferenceTypeResult(REFrameworkNET::InvokeRet% ret, TypeDefinition^ t);
     };
 }

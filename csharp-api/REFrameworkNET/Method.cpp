@@ -139,6 +139,15 @@ System::Object^ Method::InvokeBoxed(System::Type^ targetReturnType, System::Obje
     return Utility::TranslateBoxedData(targetReturnType, result);
 }
 
+REFrameworkNET::InvokeRet Method::InvokeRaw(uintptr_t obj, uintptr_t args, int argCount) {
+    const auto result = m_method->invoke(
+        (::reframework::API::ManagedObject*)obj, 
+        std::span((void**)args, argCount)
+    );
+
+    return REFrameworkNET::InvokeRet::FromNative(result);
+}
+
 ::reframework::InvokeRet Method::Invoke_Internal(System::Object^ obj, array<System::Object^>^ args) {
     if (obj == nullptr && !this->IsStatic()) {
         System::String^ declaringName = this->GetDeclaringType() != nullptr ? this->GetDeclaringType()->GetFullName() : gcnew System::String("UnknownType");

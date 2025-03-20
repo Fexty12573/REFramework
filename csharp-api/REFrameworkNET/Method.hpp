@@ -63,6 +63,8 @@ public:
 
     System::Object^ InvokeBoxed(System::Type^ targetReturnType, System::Object^ obj, array<System::Object^>^ args);
 
+    REFrameworkNET::InvokeRet InvokeRaw(uintptr_t obj, uintptr_t args, int argCount);
+
 private:
     ::reframework::InvokeRet Invoke_Internal(System::Object^ obj, array<System::Object^>^ args);
 

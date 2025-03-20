@@ -209,4 +209,46 @@ System::Object^ Utility::TranslateBoxedData(System::Type^ targetReturnType, Syst
 
     return result;
 }
+System::Object ^ Utility::ConvertReferenceTypeResult(REFrameworkNET::InvokeRet% ret, TypeDefinition ^ t) {
+    if (t == nullptr || t->IsValueType() || t->IsEnum()) {
+        return nullptr;
+    }
+
+    if (Runtime::CompilerServices::Unsafe::IsNullRef(ret) || ret.Ptr == 0) {
+        return nullptr;
+    }
+
+    const auto ptr = (uintptr_t*)ret.Ptr;
+    const auto vm_object_type = t->GetVMObjType();
+
+    if (vm_object_type == VMObjType::Object) {
+        return REFrameworkNET::ManagedObject::Get((::REFrameworkManagedObjectHandle)*ptr);
+    }
+
+    // TODO: Clean this up
+    if (vm_object_type == VMObjType::String) {
+        auto strObject = (reframework::API::ManagedObject*)*ptr;
+        const auto strType = strObject->get_type_definition();
+        const auto firstCharField = strType->find_field("_firstChar");
+        uint32_t offset = 0;
+
+        if (firstCharField != nullptr) {
+            offset = firstCharField->get_offset_from_base();
+        } else {
+            const auto fieldOffset = *(uint32_t*)(*(uintptr_t*)*ptr - sizeof(void*));
+            offset = fieldOffset + 4;
+        }
+
+        const auto chars = (wchar_t*)((uintptr_t)strObject + offset);
+        return gcnew System::String(chars);
+    }
+
+    if (vm_object_type == VMObjType::Array) {
+        // TODO? Implement array
+        return REFrameworkNET::ManagedObject::Get((::REFrameworkManagedObjectHandle)*ptr);
+    }
+
+    // TODO: other managed types
+    return gcnew REFrameworkNET::NativeObject(*ptr, t);
+}
 }

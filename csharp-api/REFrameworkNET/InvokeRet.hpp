@@ -19,13 +19,25 @@ public value struct InvokeRet {
     uint8_t Byte;
 
     [System::Runtime::InteropServices::FieldOffset(0)]
+    int8_t SByte;
+
+    [System::Runtime::InteropServices::FieldOffset(0)]
     uint16_t Word;
+
+    [System::Runtime::InteropServices::FieldOffset(0)]
+    int16_t Int16;
 
     [System::Runtime::InteropServices::FieldOffset(0)]
     uint32_t DWord;
 
     [System::Runtime::InteropServices::FieldOffset(0)]
+    int32_t Int32;
+
+    [System::Runtime::InteropServices::FieldOffset(0)]
     uint64_t QWord;
+
+    [System::Runtime::InteropServices::FieldOffset(0)]
+    int64_t Int64;
 
     [System::Runtime::InteropServices::FieldOffset(0)]
     float Float;
