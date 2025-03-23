@@ -815,7 +815,7 @@ public class AssemblyGenerator {
 
             var typeName = t.GetFullName();
             var compilationUnit = MakeFromTypeEntry(tdb, typeName, t);
-            compilationUnits.Add(compilationUnit);
+            compilationUnits.Add(compilationUnit.NormalizeWhitespace());
 
             // Clean up all the local objects
             // Mainly because some of the older games don't play well with a ton of objects on the thread local heap
@@ -867,18 +867,36 @@ public class AssemblyGenerator {
                 List<Diagnostic> sortedDiagnostics = result.Diagnostics.OrderBy(d => d.Location.SourceSpan.Start).ToList();
                 sortedDiagnostics.Reverse();
 
+                using var sourceFile = File.Open($"REF_SOURCE_{strippedAssemblyName}.cs", FileMode.Create);
+                using var sourceWriter = new StreamWriter(sourceFile);
+                foreach (var cu in compilationUnits)
+                {
+                    sourceWriter.WriteLine(cu.ToFullString());
+                }
+
+                sourceWriter.Flush();
+
+                var errorLog = File.Open($"REF_ERROR_LOG_{strippedAssemblyName}.log", FileMode.Create);
+                var errorWriter = new StreamWriter(errorLog);
+
                 foreach (Diagnostic diagnostic in sortedDiagnostics)
                 {
                     var textLines = diagnostic.Location.SourceTree?.GetText().Lines;
-                    Console.WriteLine($"{diagnostic.Id}: {diagnostic.GetMessage()}");
+                    var err = $"{diagnostic.Id}: {diagnostic.GetMessage()}";
 
                     var lineSpan = diagnostic.Location.GetLineSpan();
                     var errorLineNumber = lineSpan.StartLinePosition.Line;
                     var errorLineText = textLines?[errorLineNumber].ToString();
-                    Console.WriteLine($"Error in line {errorLineNumber + 1}: {errorLineText}");
+
+                    errorWriter.WriteLine(err);
+                    errorWriter.WriteLine($"Error in line {errorLineNumber + 1}: {errorLineText}");
+                    errorWriter.Flush();
+
+                    Console.WriteLine(err);
+                    //Console.WriteLine($"Error in line {errorLineNumber + 1}: {errorLineText}");
                     //Console.WriteLine(diagnostic.Location.SourceTree?.GetText());
                     //Console.WriteLine(
-                        //$"Error in line {errorLineNumber + 1}: {lineSpan.StartLinePosition.Character + 1} - {lineSpan.EndLinePosition.Character + 1}");
+                    //$"Error in line {errorLineNumber + 1}: {lineSpan.StartLinePosition.Character + 1} - {lineSpan.EndLinePosition.Character + 1}");
                 }
 
                 REFrameworkNET.API.LogError("Failed to compile " + strippedAssemblyName);
@@ -945,6 +963,8 @@ public class AssemblyGenerator {
             var bytecode = GenerateForAssembly(module, bytecodes);
 
             if (bytecode != null) {
+                var assemblyFileName = "REFramework.NET." + assemblyName + ".dll";
+                File.WriteAllBytes($"reframework/plugins/managed/generated/{assemblyFileName}", bytecode.Bytecode);
                 bytecodes.Add(bytecode);
             }
 

@@ -27,6 +27,15 @@ public class ClassGenerator {
         public REFrameworkNET.TypeDefinition? indexType;
     };
 
+    private record FixedBlock(StatementSyntax? fixedStatement, List<StatementSyntax> blockStatements);
+    private record ParameterInfo(
+        string name,
+        string typeName,
+        bool isRef = false,
+        bool isOut = false,
+        bool isPointer = false
+    );
+
     private Dictionary<string, PseudoProperty> pseudoProperties = [];
 
     private string className;
@@ -37,10 +46,11 @@ public class ClassGenerator {
     public List<REFrameworkNET.TypeDefinition> usingTypes = [];
     private TypeDeclarationSyntax? typeDeclaration;
     private bool addedNewKeyword = false;
+    private bool valueTypeHasRefTypeFields = false;
     
     private List<FieldDeclarationSyntax> internalFieldDeclarations = [];
 
-    private static string[] valueTypeMethods = ["Equals", "GetHashCode", "ToString"];
+    private static readonly string[] valueTypeMethods = ["Equals", "GetHashCode", "ToString"];
 
     public TypeDeclarationSyntax? TypeDeclaration {
         get {
@@ -391,7 +401,7 @@ public class ClassGenerator {
 
         typeDeclaration = GenerateValueTypeFields();
         typeDeclaration = GenerateValueTypeMethods();
-        typeDeclaration = GenerateProperties([]);
+        //typeDeclaration = GenerateProperties([]); TODO: Re-enable this
 
         typeDeclaration = typeDeclaration?.AddMembers(refTypeFieldDecl);
 
@@ -773,6 +783,10 @@ public class ClassGenerator {
             .Select(field => {
                 var fieldType = MakeProperType(field.Type, t);
                 var fieldName = new string(field.Name);
+
+                if (!field.Type.IsValueType() && !field.Type.IsEnum()) {
+                    valueTypeHasRefTypeFields = true;
+                }
 
                 // Replace the k backingfield crap
                 if (fieldName.StartsWith("<") && fieldName.EndsWith("k__BackingField"))
@@ -1167,7 +1181,7 @@ public class ClassGenerator {
                 );
 
             var anyOutParams = false;
-            List<string> paramNames = [];
+            List<ParameterInfo> parameterInfos = [];
 
             var runtimeMethod = method.GetRuntimeMethod();
             if (runtimeMethod == null)
@@ -1208,15 +1222,16 @@ public class ClassGenerator {
                             paramName = "object_"; // object is a reserved keyword.
                         }
 
+                        var actualParamName = new string(paramName as string);
                         var paramType = param.get_ParameterType();
 
                         if (paramType == null) {
-                            paramNames.Add(paramName);
-                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(paramName)).WithType(SyntaxFactory.ParseTypeName("object")));
+                            var objectType = SyntaxFactory.ParseTypeName("object");
+                            parameterInfos.Add(new ParameterInfo(actualParamName, objectType.GetText().ToString()));
+                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(actualParamName)).WithType(objectType));
                             continue;
                         }
 
-                        var parsedParamName = new string(paramName as string);
 
                         var isByRef = paramType.IsByRefImpl();
                         var isPointer = paramType.IsPointerImpl();
@@ -1240,18 +1255,16 @@ public class ClassGenerator {
                                 modifiers.Add(SyntaxFactory.Token(SyntaxKind.RefKeyword));
                             }
 
-                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(paramName)).WithType(SyntaxFactory.ParseTypeName(paramTypeSyntax.ToString())).AddModifiers(modifiers.ToArray()));
+                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(actualParamName)).WithType(SyntaxFactory.ParseTypeName(paramTypeSyntax.ToString())).AddModifiers(modifiers.ToArray()));
                         } else if (isPointer == true) {
                             simpleMethodSignature += "ptr " + paramTypeSyntax.GetText().ToString();
-                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(paramName)).WithType(SyntaxFactory.ParseTypeName(paramTypeSyntax.ToString() + "*")).AddModifiers(modifiers.ToArray()));
-
-                            parsedParamName = "(global::System.IntPtr) " + parsedParamName;
+                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(actualParamName)).WithType(SyntaxFactory.ParseTypeName(paramTypeSyntax.ToString() + "*")).AddModifiers(modifiers.ToArray()));
                         } else {
                             simpleMethodSignature += paramTypeSyntax.GetText().ToString();
-                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(paramName)).WithType(paramTypeSyntax).AddModifiers(modifiers.ToArray()));
+                            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(actualParamName)).WithType(paramTypeSyntax).AddModifiers(modifiers.ToArray()));
                         }
 
-                        paramNames.Add(parsedParamName);
+                        parameterInfos.Add(new ParameterInfo(actualParamName, paramTypeSyntax.GetText().ToString(), isByRef, isOut, isPointer));
                     }
 
                     methodDeclaration = methodDeclaration.AddParameterListParameters([.. parameters]);
@@ -1276,19 +1289,20 @@ public class ClassGenerator {
             // - Value types with size <= sizeof(void*) are passed by value (unless they are ref/in/out)
             // - Value types with size > sizeof(void*) are passed by reference
             // - Pointers are passed as-is
-            List<StatementSyntax> bodyStatements = [];
-            
-            if (!isVoidReturn) {
-                bodyStatements.Add(SyntaxFactory.ParseStatement("global::REFrameworkNET.InvokeRet __result;"));
-            }
+            List<FixedBlock> blocks = [new(null, [])];
+            List<StatementSyntax> refParameterAssignments = [];
 
+            if (!isVoidReturn) {
+                blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement("global::REFrameworkNET.InvokeRet __result;"));
+            }
+            
             var argList = "";
 
-            if (method.Parameters.Count > 0) {
-                bodyStatements.Add(SyntaxFactory.ParseStatement(
+            if (method.Parameters.Count > 0 && runtimeParams is not null) {
+                blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
                     $"global::System.Span<ulong> __args = stackalloc ulong[{method.Parameters.Count}];"));
 
-                for (var i = 0; i < method.Parameters.Count; i++) {
+                for (var i = 0; i < method.Parameters.Count; ++i) {
                     var param = method.Parameters[i];
                     if (param == null) {
                         continue;
@@ -1299,60 +1313,125 @@ public class ClassGenerator {
                         continue;
                     }
 
-                    var argName = paramNames[i];
+                    var info = parameterInfos[i];
+                    var argName = info.name;
 
-                    if (paramType.IsValueType()) {
-                        if (paramType.IsPrimitive()) {
+                    if (paramType.IsPrimitive()) {
+                        if (info.isOut || info.isRef) {
                             switch (paramType.FullName) {
                                 case "System.Single":
                                     // floats are passed as doubles
-                                    bodyStatements.Add(SyntaxFactory.ParseStatement($"var {argName}__conv = (double) {argName};"));
-                                    argName += "__conv";
+                                    blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                        $"var {argName}__conv = (double) {argName};"));
+                                    refParameterAssignments.Add(SyntaxFactory.ParseStatement(
+                                        $"{argName} = (float) {argName}__conv;"));
+
+                                    // Since this ...__conv variable is non-ref local now we don't need a fixed block for it
+                                    argName = $"&{argName}__conv";
                                     break;
                                 case "System.SByte" or "System.Int16" or "System.Int32":
-                                    bodyStatements.Add(SyntaxFactory.ParseStatement($"var {argName}__conv = (long) {argName};"));
-                                    argName += "__conv";
+                                    blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                        $"var {argName}__conv = (long) {argName};"));
+                                    refParameterAssignments.Add(SyntaxFactory.ParseStatement(
+                                        $"{argName} = ({info.typeName}) {argName}__conv;"));
+                                    argName = $"&{argName}__conv";
                                     break;
                                 case "System.Byte" or "System.UInt16" or "System.UInt32":
-                                    bodyStatements.Add(SyntaxFactory.ParseStatement($"var {argName}__conv = (ulong) {argName};"));
-                                    argName += "__conv";
+                                    blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                        $"var {argName}__conv = (ulong) {argName};"));
+                                    refParameterAssignments.Add(SyntaxFactory.ParseStatement(
+                                        $"{argName} = ({info.typeName}) {argName}__conv;"));
+                                    argName = $"&{argName}__conv";
+                                    break;
+                                default:
+                                    var fixedStatement = SyntaxFactory.ParseStatement($"fixed ({info.typeName}* {argName}__ptr = &{argName})");
+                                    argName += "__ptr";
+                                    blocks.Add(new FixedBlock(fixedStatement, []));
                                     break;
                             }
-
-                            bodyStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) Unsafe.As<ulong>(ref {argName});"));
+                            
+                            blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) {argName};"));
+                        } else if (info.isPointer) {
+                            blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) {argName};"));
                         } else {
-                            // Non-primitive value types are passed by reference
-                            bodyStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) Unsafe.AsPointer(ref {argName});"));
+                            var sourceType = info.typeName;
+                            switch (paramType.FullName) {
+                                case "System.Single":
+                                    // floats are passed as doubles
+                                    blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                        $"var {argName}__conv = (double) {argName};"));
+                                    argName += "__conv";
+                                    sourceType = "double";
+                                    break;
+                                case "System.SByte" or "System.Int16" or "System.Int32":
+                                    blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                        $"var {argName}__conv = (long) {argName};"));
+                                    argName += "__conv";
+                                    sourceType = "long";
+                                    break;
+                                case "System.Byte" or "System.UInt16" or "System.UInt32":
+                                    blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                        $"var {argName}__conv = (ulong) {argName};"));
+                                    argName += "__conv";
+                                    sourceType = "ulong";
+                                    break;
+                            }
+                            
+                            blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                                $"__args[{i}] = (ulong) global::System.Runtime.CompilerServices.Unsafe.As<{sourceType}, ulong>(ref {argName});"));
+                        }
+                    } else if (paramType.IsValueType()) {
+                        if (info.isOut || info.isRef) {
+                            var fixedStatement = SyntaxFactory.ParseStatement($"fixed ({info.typeName}* {argName}__ptr = &{argName})");
+                            argName += "__ptr";
+                            blocks.Add(new FixedBlock(fixedStatement, []));
+                            blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) {argName};"));
+                        } else if (info.isPointer) {
+                            blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) {argName};"));
+                        } else {
+                            blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) (&{argName});"));
                         }
                     } else {
-                        bodyStatements.Add(paramType.FullName == "System.String"
-                            ? SyntaxFactory.ParseStatement($"var {argName}__conv = VM.CreateString({argName});")
+                        blocks[^1].blockStatements.Add(paramType.FullName == "System.String"
+                            ? SyntaxFactory.ParseStatement($"var {argName}__conv = global::REFrameworkNET.VM.CreateString({argName});")
                             : SyntaxFactory.ParseStatement($"var {argName}__conv = (REFrameworkNET.IObject) {argName};"));
 
-                        bodyStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) {argName}__conv.Ptr();"));
+                        blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement($"__args[{i}] = (ulong) {argName}__conv.Ptr();"));
                     }
                 }
-                
-                bodyStatements.Add(SyntaxFactory.ParseStatement($"fixed (ulong* __args_ptr = __args)"));
+
+                blocks.Add(new FixedBlock(SyntaxFactory.ParseStatement("fixed (ulong* __args_ptr = __args)"), []));
                 argList = "(ulong) __args_ptr, __args.Length";
             } else {
                 argList = "0, 0";
             }
-
-            bodyStatements.Add(SyntaxFactory.ParseStatement($"fixed ({actualName}* __pthis = &this)"));
             
-            if (isVoidReturn) {
-                bodyStatements.Add(SyntaxFactory.ParseStatement($"{internalFieldName}.InvokeRaw(__pthis, {argList});"));
+            // For value types, 'this' is treated as a value as well so we need to obtain a pointer to it
+            if (valueTypeHasRefTypeFields) {
+                // Taking the address of 'this' is not allowed if it contains any reference type fields (i.e. object, string, etc)
+                // So instead just rawdog it with Unsafe.AsPointer
+                // Another (slower) option is to use GCHandle.Alloc to pin the object and get the address of the pinned object
+                blocks[^1].blockStatements.Add(SyntaxFactory.ParseStatement(
+                    "var this__ptr = global::System.Runtime.CompilerServices.Unsafe.AsPointer(ref this);"));
             } else {
-                bodyStatements.Add(SyntaxFactory.ParseStatement($"__result = {internalFieldName}.InvokeRaw(__pthis, {argList});"));
-            }
-            
-            if (!isVoidReturn) {
-                GenerateReturnValueHandler(bodyStatements, method.ReturnType, returnType, internalFieldName);
+                var fullTypeName = AssemblyGenerator.CorrectTypeName(t.FullName);
+                blocks.Add(new FixedBlock(SyntaxFactory.ParseStatement($"fixed ({fullTypeName}* this__ptr = &this)"), []));
             }
 
-            return methodDeclaration.AddBodyStatements(bodyStatements.ToArray());
-        });
+            blocks[^1].blockStatements.Add(isVoidReturn
+                ? SyntaxFactory.ParseStatement($"{internalFieldName}.InvokeRaw((ulong) this__ptr, {argList});")
+                : SyntaxFactory.ParseStatement($"__result = {internalFieldName}.InvokeRaw((ulong) this__ptr, {argList});"));
+
+            methodDeclaration = methodDeclaration.AddBodyStatements(ResolveFixedBlocks(blocks));
+            methodDeclaration = methodDeclaration.AddBodyStatements([..refParameterAssignments]);
+
+            if (!isVoidReturn) {
+                methodDeclaration = methodDeclaration
+                    .AddBodyStatements(GenerateReturnValueHandler(method.ReturnType, returnType, internalFieldName));
+            }
+
+            return methodDeclaration;
+        }).Where(method => method != null).Select(method => method!);
 
         if (matchingMethods == null) {
             return typeDeclaration;
@@ -1361,8 +1440,28 @@ public class ClassGenerator {
         return typeDeclaration.AddMembers(matchingMethods.ToArray());
     }
 
-    private void GenerateReturnValueHandler(List<StatementSyntax> statements, TypeDefinition returnType, 
-        TypeSyntax actualReturnType, string methodFieldName) {
+    private static StatementSyntax[] ResolveFixedBlocks(List<FixedBlock> blocks) {
+        return ResolveFixedBlocks(CollectionsMarshal.AsSpan(blocks), 0);
+    }
+
+    private static StatementSyntax[] ResolveFixedBlocks(Span<FixedBlock> blocks, int index) {
+        if (index >= blocks.Length) {
+            return [];
+        }
+
+        var block = blocks[index];
+        if (block.fixedStatement is null) {
+            return block.blockStatements.Concat(ResolveFixedBlocks(blocks, index + 1)).ToArray();
+        }
+
+        return [
+            block.fixedStatement,
+            SyntaxFactory.Block(block.blockStatements.Concat(ResolveFixedBlocks(blocks, index + 1)))
+        ];
+    }
+
+    private StatementSyntax[] GenerateReturnValueHandler(TypeDefinition returnType, TypeSyntax actualReturnType, string methodFieldName) {
+        List<StatementSyntax> statements = [];
         if (returnType.IsPrimitive()) {
             switch (returnType.FullName) {
                 case "System.Single":
@@ -1370,6 +1469,12 @@ public class ClassGenerator {
                     break;
                 case "System.Double":
                     statements.Add(SyntaxFactory.ParseStatement("return __result.Double;"));
+                    break;
+                case "System.Decimal":
+                    statements.Add(SyntaxFactory.ParseStatement("return global::System.Runtime.CompilerServices.Unsafe.As<byte, decimal>(ref __result.Byte);"));
+                    break;
+                case "System.Char":
+                    statements.Add(SyntaxFactory.ParseStatement("return (char) __result.Int16;"));
                     break;
                 case "System.SByte":
                     statements.Add(SyntaxFactory.ParseStatement("return __result.SByte;"));
@@ -1398,17 +1503,22 @@ public class ClassGenerator {
                 case "System.Boolean":
                     statements.Add(SyntaxFactory.ParseStatement("return __result.Byte != 0;"));
                     break;
+                case "System.IntPtr":
+                    statements.Add(SyntaxFactory.ParseStatement("return (global::System.IntPtr) __result.Int64;"));
+                    break;
+                case "System.UIntPtr":
+                    statements.Add(SyntaxFactory.ParseStatement("return (global::System.UIntPtr) __result.Ptr;"));
+                    break;
                 default:
                     throw new NotImplementedException("Unsupported primitive type: " + returnType.FullName);
             }
         } else if (t.IsValueType() || t.IsEnum()) {
             statements.Add(
                 SyntaxFactory.ParseStatement(
-                    $"return Unsafe.As<global::REFrameworkNET.InvokeRet, {actualReturnType}>(ref __result);"));
+                    $"return global::System.Runtime.CompilerServices.Unsafe.As<global::REFrameworkNET.InvokeRet, {actualReturnType}>(ref __result);"));
         } else {
             var conversionCall = $"Utility.ConvertReferenceTypeResult(ref __result, {methodFieldName}.ReturnType)";
-            switch (t.GetVMObjType())
-            {
+            switch (t.GetVMObjType()) {
                 case VMObjType.Object:
                 case VMObjType.Array:
                     statements.Add(SyntaxFactory.ParseStatement(
@@ -1421,6 +1531,8 @@ public class ClassGenerator {
                     throw new NotImplementedException();
             }
         }
+
+        return [..statements];
     }
 
     private TypeDeclarationSyntax? GenerateNestedTypes() {
